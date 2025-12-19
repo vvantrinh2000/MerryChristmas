@@ -415,6 +415,7 @@
             updateParticleGroup(groupGold, 'gold', state, speed, handRotY, time);
             updateParticleGroup(groupRed, 'red', state, speed, handRotY, time);
             updateParticleGroup(groupGift, 'gift', state, speed, handRotY, time);
+            selectedIndex = Math.max(0, Math.min(4, Math.floor(handX * 5)));    
 
             photoMeshes.forEach((mesh, i) => {
                 if(!mesh.material.map && photoTextures[i]) {
@@ -436,27 +437,37 @@
                 loveMesh.scale.set(s,s,1);
 
             } else if (state === 'EXPLODE') {
-                titleMesh.visible = false; starMesh.visible = false; loveMesh.visible = false;
-                const baseAngle = groupGold.rotation.y; 
-                const angleStep = (Math.PI * 2) / 5;
-                let bestIdx = 0; let maxZ = -999;
-                photoMeshes.forEach((mesh, i) => {
+                  titleMesh.visible = false; 
+                  starMesh.visible = false; 
+                  loveMesh.visible = false;
+
+                  // ✅ chọn ảnh theo vị trí tay trái/phải
+                  selectedIndex = Math.max(0, Math.min(4, Math.floor(handX * 5)));
+
+                  const baseAngle = groupGold.rotation.y; 
+                  const angleStep = (Math.PI * 2) / 5;
+
+                  photoMeshes.forEach((mesh, i) => {
                     mesh.visible = true;
+
                     const angle = baseAngle + i * angleStep;
                     const x = Math.sin(angle) * CONFIG.photoOrbitRadius;
                     const z = Math.cos(angle) * CONFIG.photoOrbitRadius;
-                    const y = Math.sin(time + i) * 3; 
+                    const y = Math.sin(time + i) * 3;
+
                     mesh.position.lerp(new THREE.Vector3(x, y, z), 0.1);
                     mesh.lookAt(camera.position);
-                    if (z > maxZ) { maxZ = z; bestIdx = i; }
-                    if (z > 5) { 
-                        const ds = 1.0 + (z/CONFIG.photoOrbitRadius)*0.8; 
-                        mesh.scale.lerp(new THREE.Vector3(ds, ds, ds), 0.1);
+
+                    // optional: làm ảnh được chọn to hơn một chút để dễ nhìn
+                    if (i === selectedIndex) {
+                      mesh.scale.lerp(new THREE.Vector3(1.8, 1.8, 1.8), 0.12);
+                    } else if (z > 5) {
+                      const ds = 1.0 + (z / CONFIG.photoOrbitRadius) * 0.8;
+                      mesh.scale.lerp(new THREE.Vector3(ds, ds, ds), 0.1);
                     } else {
-                        mesh.scale.lerp(new THREE.Vector3(0.6, 0.6, 0.6), 0.1);
+                      mesh.scale.lerp(new THREE.Vector3(0.6, 0.6, 0.6), 0.1);
                     }
-                });
-                selectedIndex = bestIdx;
+                  });
 
             } else if (state === 'PHOTO') {
                 loveMesh.visible = false;
